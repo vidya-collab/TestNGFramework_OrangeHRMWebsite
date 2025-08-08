@@ -7,7 +7,6 @@ import org.testng.annotations.Test;
 
 import base.BaseTests;
 import page.OrangeLoginPage;
-import utils.LoggerLoad;
 
 public class OrangeLoginTest extends BaseTests {
     OrangeLoginPage login;
@@ -15,21 +14,50 @@ public class OrangeLoginTest extends BaseTests {
     @BeforeMethod
     @Parameters("browser")
     public void setupTest(String browser) {
-        //super.setup(browser);
         login = new OrangeLoginPage(driver);
     }
 
-   //@Test(dataProvider = "OrangeLoginTestData", dataProviderClass = page.OrangeLoginPage.class, retryAnalyzer = utils.RetryAnalyzer.class)
-    @Test(dataProvider = "OrangeLoginTestData", dataProviderClass = page.OrangeLoginPage.class)
-    public void testLoginPage(String Username, String Password, String ExpectedMessage) {
-        login.orangeLogin(Username, Password);
+    
+   
 
-        String actualResult = login.processCredentials();
+@Test(dataProvider = "OrangeLoginTestData", dataProviderClass = page.OrangeLoginPage.class)
+public void testLogin(String username, String password, String expectedError, String errorType) {
+   // LoginPage loginPage = new LoginPage(getDriver());
+	login.orangeLogin(username, password);
 
-        LoggerLoad.info("Actual result: " + actualResult);
-        LoggerLoad.info("Expected result: " + ExpectedMessage);
+    switch (errorType.toLowerCase()) {
+        case "popup":
+        	//pop up message Invalid credentials
+            String popupMsg = login.getPopupErrorMessage();
+            Assert.assertEquals(popupMsg, expectedError);
+            break;
 
-        Assert.assertEquals(actualResult.trim(), ExpectedMessage.trim(), "Login test failed!");
+        case "empty-user":
+        	//blank username case
+            String userError = login.getInlineErrorMessage();
+            Assert.assertEquals(userError, expectedError);
+            break;
+
+        case "empty-pass":
+        	//blank password case
+            String passError = login.getInlineErrorMessage();
+            Assert.assertEquals(passError, expectedError);
+            break;
+
+        case "empty-both":
+        	//blank username and password case
+            Assert.assertEquals(login.getInlineErrorMessage(), expectedError);
+            break;
+
+        case "none":
+        	//Gets the current URL of the browser after login Checks if the URL contains the word "dashboard" 
+        	//(which indicates login success in OrangeHRM) if the test failes "Login faield message is displayed
+            Assert.assertTrue(driver.getCurrentUrl().contains("dashboard"), "Login failed");
+            break;
+
+        default:
+            Assert.fail("Invalid errorType in test data: " + errorType);
     }
 }
 
+}
